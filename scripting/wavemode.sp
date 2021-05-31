@@ -88,25 +88,18 @@ public SMCResult Warband_EndSection(SMCParser smc)
     // PrintToServer("%d", g_section);
     if(g_section == 2 && strcmp(g_current_warband, g_target_warband) == 0)
     {
-        // command to add class...etc
-        // PrintToServer("[SM-DEBUG] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
-        // PrintToServer("[SM] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
-        // ServerCommand("tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
         for(int bot_count = 0; bot_count < StringToInt(g_count); bot_count++)
         {
-            ServerCommand("tf_bot_add 1 %s %s %s %s", g_class, g_team, g_difficulty, g_name);
+            ServerCommand("tf_bot_add 1 %s %s %s \"%s(%d)\"", g_class, g_team, g_difficulty, g_name, bot_count + 1);
         }
 
         for(int k = 0; k < g_retrieved_strings; k++)
         {
-            // PrintToServer("[SM-DEBUG] Registered cond (buff): %s", g_buffs[k]);
-            PrintToServer("[SM] bot_command %s addcond %s", g_name, g_buffs[k]);
-            ServerCommand("bot_command %s addcond %s", g_name, g_buffs[k]);
-            // for(int bot_copy = 1; bot_copy < StringToInt(g_count); bot_copy++)
-            // {
-            //     PrintToServer("[SM] bot_command \"(%d)%s\" addcond %s", bot_copy, g_name, g_buffs[k]);
-            //     ServerCommand("bot_command \"(%d)%s\" addcond %s", bot_copy, g_name, g_buffs[k]);
-            // }
+            for(int bot_copy = 1; bot_copy <= StringToInt(g_count); bot_copy++)
+            {
+                PrintToServer("[SM] bot_command \"%s(%d)\" addcond %s", g_name, bot_copy, g_buffs[k]);
+                ServerCommand("bot_command \"%s(%d)\" addcond %s", g_name, bot_copy, g_buffs[k]);
+            }
         }
     }
     return SMCParse_Continue;
@@ -114,7 +107,6 @@ public SMCResult Warband_EndSection(SMCParser smc)
 public SMCResult Warband_NewSection(SMCParser smc, const char[] name, bool opt_quotes)
 {
     g_section++;
-    // PrintToServer("%s %d", name, g_section);
     if(g_section == 2)
     {
         strcopy(g_current_warband, strlen(name) + 1, name);
@@ -122,12 +114,11 @@ public SMCResult Warband_NewSection(SMCParser smc, const char[] name, bool opt_q
     if(g_section == 3 && strcmp(g_current_warband, g_target_warband) == 0)
     {
         strcopy(g_class, strlen(name) + 1, name);
-        // PrintToServer("Encountered %s", g_class);
     }
     return SMCParse_Continue;
 }
 
-// sm_myslap [warband name] [team]
+// sm_unleash_wave [warband name] [team]
 public Action Command_Unleash_Wave(int client, int args)
 {
     char arg1[32], arg2[32];
