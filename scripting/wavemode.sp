@@ -19,16 +19,24 @@ public void OnPluginStart()
     HookEvent("player_death", Event_PlayerDeath);
 }
 
+// Bug appears to come from client values exceeding the server limit
+// https://forums.alliedmods.net/showthread.php?t=300581
+stock bool IsValidClient(int client, bool bAllowBots = false, bool bAllowDead = true) 
+{ 
+    if (!(1 <= client <= MaxClients) || !IsClientInGame(client) || (IsFakeClient(client) && !bAllowBots) || IsClientSourceTV(client) || IsClientReplay(client) || (!bAllowDead && !IsPlayerAlive(client))) 
+    { 
+        return false; 
+    } 
+    return true; 
+}  
+
 public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
     // Kick bots that are killed.  This ensures that a wave can be beaten
     int victim_id = event.GetInt("userid");
     int victim = GetClientOfUserId(victim_id);
-    // IsClientInGame preferred over isFakeClient
-    // https://forums.alliedmods.net/showthread.php?t=174577
-    if(!IsClientInGame(victim_id))
+    if (!IsValidClient(victim_id, true))
     {
-        //PrintToServer("tf_bot_kick \"%N\"", victim);
         ServerCommand("tf_bot_kick \"%N\"", victim);
         PrintToServer("[SM] %N was removed from the wave", victim);
     }
@@ -82,18 +90,23 @@ public SMCResult Warband_EndSection(SMCParser smc)
     {
         // command to add class...etc
         // PrintToServer("[SM-DEBUG] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
-        PrintToServer("[SM] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
-        ServerCommand("tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        // PrintToServer("[SM] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        // ServerCommand("tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        for(int bot_count = 0; bot_count < StringToInt(g_count); bot_count++)
+        {
+            ServerCommand("tf_bot_add 1 %s %s %s %s", g_class, g_team, g_difficulty, g_name);
+        }
+
         for(int k = 0; k < g_retrieved_strings; k++)
         {
             // PrintToServer("[SM-DEBUG] Registered cond (buff): %s", g_buffs[k]);
             PrintToServer("[SM] bot_command %s addcond %s", g_name, g_buffs[k]);
             ServerCommand("bot_command %s addcond %s", g_name, g_buffs[k]);
-            for(int bot_copy = 1; bot_copy < StringToInt(g_count); bot_copy++)
-            {
-                PrintToServer("[SM] bot_command (%d)%s addcond %s", bot_copy, g_name, g_buffs[k]);
-                ServerCommand("bot_command (%d)%s addcond %s", bot_copy, g_name, g_buffs[k]);
-            }
+            // for(int bot_copy = 1; bot_copy < StringToInt(g_count); bot_copy++)
+            // {
+            //     PrintToServer("[SM] bot_command \"(%d)%s\" addcond %s", bot_copy, g_name, g_buffs[k]);
+            //     ServerCommand("bot_command \"(%d)%s\" addcond %s", bot_copy, g_name, g_buffs[k]);
+            // }
         }
     }
     return SMCParse_Continue;
