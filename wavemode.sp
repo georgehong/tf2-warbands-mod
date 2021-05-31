@@ -82,12 +82,17 @@ public SMCResult Warband_EndSection(SMCParser smc)
     {
         // command to add class...etc
         // PrintToServer("[SM-DEBUG] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
-        PrintToServer("tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
-        for (int k = 0; k < g_retrieved_strings; k++){
+        PrintToServer("[SM] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        ServerCommand("tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        for(int k = 0; k < g_retrieved_strings; k++)
+        {
             // PrintToServer("[SM-DEBUG] Registered cond (buff): %s", g_buffs[k]);
-            PrintToServer("bot_command %s addcond %s", g_name, g_buffs[k]);
-            for (int bot_copy = 1; bot_copy < StringToInt(g_count); bot_copy++){
-                PrintToServer("bot_command (%d)%s addcond %s", bot_copy, g_name, g_buffs[k]);
+            PrintToServer("[SM] bot_command %s addcond %s", g_name, g_buffs[k]);
+            ServerCommand("bot_command %s addcond %s", g_name, g_buffs[k]);
+            for(int bot_copy = 1; bot_copy < StringToInt(g_count); bot_copy++)
+            {
+                PrintToServer("[SM] bot_command (%d)%s addcond %s", bot_copy, g_name, g_buffs[k]);
+                ServerCommand("bot_command (%d)%s addcond %s", bot_copy, g_name, g_buffs[k]);
             }
         }
     }
