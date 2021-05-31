@@ -73,8 +73,8 @@ public SMCResult Warband_KeyValue(SMCParser smc, const char[] key, const char[] 
 public SMCResult Warband_EndSection(SMCParser smc)
 {
     g_section--;
-    PrintToServer("%d", g_section);
-    if(g_section == 1 && strcmp(g_current_warband, g_target_warband) == 0)
+    // PrintToServer("%d", g_section);
+    if(g_section == 2 && strcmp(g_current_warband, g_target_warband) == 0)
     {
         // command to add class...etc
         PrintToServer("[SM-DEBUG] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
@@ -85,11 +85,11 @@ public SMCResult Warband_NewSection(SMCParser smc, const char[] name, bool opt_q
 {
     g_section++;
     PrintToServer("%s %d", name, g_section);
-    if(g_section == 1)
+    if(g_section == 2)
     {
         strcopy(g_current_warband, strlen(name) + 1, name);
     }
-    if(g_section == 2 && strcmp(g_current_warband, g_target_warband) == 0)
+    if(g_section == 3 && strcmp(g_current_warband, g_target_warband) == 0)
     {
         strcopy(g_class, strlen(name) + 1, name);
         PrintToServer("Encountered %s", g_class);
