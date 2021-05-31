@@ -24,6 +24,7 @@ public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast
     // Kick bots that are killed.  This ensures that a wave can be beaten
     int victim_id = event.GetInt("userid");
     int victim = GetClientOfUserId(victim_id);
+    // IsClientInGame preferred over isFakeClient
     // https://forums.alliedmods.net/showthread.php?t=174577
     if(!IsClientInGame(victim_id))
     {
@@ -33,9 +34,9 @@ public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast
     }
 }
 
-//==========================================================================
+//============================================================================
 // Warband Configs
-//==========================================================================
+//============================================================================
 
 int g_section;         // 1: root, 2: warband name, 3: class name
 char g_class[32];      // class to create
@@ -45,6 +46,8 @@ char g_team[32];            // red or blue
 char g_target_warband[32];  // name of target warband to add
 char g_current_warband[32]; // name of current parsed warband (attacking group)
 char g_count[32];
+char g_buffs[32][32];
+int g_retrieved_strings;
 //int[] g_buffs;
 
 public SMCResult Warband_KeyValue(SMCParser smc, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
@@ -54,6 +57,7 @@ public SMCResult Warband_KeyValue(SMCParser smc, const char[] key, const char[] 
         if(strcmp(key, "buffs") == 0)
         {
             // TODO: Implement
+            g_retrieved_strings = ExplodeString(value, " ", g_buffs, 32, 32);
         }
         else if(strcmp(key, "difficulty") == 0)
         {
@@ -61,7 +65,7 @@ public SMCResult Warband_KeyValue(SMCParser smc, const char[] key, const char[] 
         }
         else if(strcmp(key, "name") == 0)
         {
-            strcopy(g_class, strlen(value) + 1, value);
+            strcopy(g_name, strlen(value) + 1, value);
         }
         else if(strcmp(key, "count") == 0)
         {
@@ -77,14 +81,22 @@ public SMCResult Warband_EndSection(SMCParser smc)
     if(g_section == 2 && strcmp(g_current_warband, g_target_warband) == 0)
     {
         // command to add class...etc
-        PrintToServer("[SM-DEBUG] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        // PrintToServer("[SM-DEBUG] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        PrintToServer("tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+        for (int k = 0; k < g_retrieved_strings; k++){
+            // PrintToServer("[SM-DEBUG] Registered cond (buff): %s", g_buffs[k]);
+            PrintToServer("bot_command %s addcond %s", g_name, g_buffs[k]);
+            for (int bot_copy = 1; bot_copy < StringToInt(g_count); bot_copy++){
+                PrintToServer("bot_command (%d)%s addcond %s", bot_copy, g_name, g_buffs[k]);
+            }
+        }
     }
     return SMCParse_Continue;
 }
 public SMCResult Warband_NewSection(SMCParser smc, const char[] name, bool opt_quotes)
 {
     g_section++;
-    PrintToServer("%s %d", name, g_section);
+    // PrintToServer("%s %d", name, g_section);
     if(g_section == 2)
     {
         strcopy(g_current_warband, strlen(name) + 1, name);
@@ -92,7 +104,7 @@ public SMCResult Warband_NewSection(SMCParser smc, const char[] name, bool opt_q
     if(g_section == 3 && strcmp(g_current_warband, g_target_warband) == 0)
     {
         strcopy(g_class, strlen(name) + 1, name);
-        PrintToServer("Encountered %s", g_class);
+        // PrintToServer("Encountered %s", g_class);
     }
     return SMCParse_Continue;
 }
@@ -115,16 +127,16 @@ public Action Command_Unleash_Wave(int client, int args)
     g_section = 0;
     SMCError result = parser.ParseFile(sPath, line, col);
 
-    if( result != SMCError_Okay )
+    if(result != SMCError_Okay)
     {
-    	if( parser.GetErrorString(result, error, sizeof(error)) )
-    	{
-    		SetFailState("%s on line %d, col %d of %s [%d]", error, line, col, sPath, result);
-    	}
-    	else
-    	{
-    		SetFailState("Unable to load config. Bad format? Check for missing { } etc.");
-    	}
+        if(parser.GetErrorString(result, error, sizeof(error)))
+        {
+            SetFailState("%s on line %d, col %d of %s [%d]", error, line, col, sPath, result);
+        }
+        else
+        {
+            SetFailState("Unable to load config. Bad format? Check for missing { } etc.");
+        }
     }
     delete parser;
     return Plugin_Handled;
