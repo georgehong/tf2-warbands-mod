@@ -1,6 +1,9 @@
 #include <sdktools>
 #include <sourcemod>
 
+#define CONFIG_FOLDER "configs"
+#define CONFIG_FILE "warbands.txt"
+
 public Plugin myinfo =
   {
     name = "Wave Mode Plugin",
@@ -34,30 +37,61 @@ public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast
 // Warband Configs
 //==========================================================================
 
-int g_section; // 1: warband name, 2: class name
-char g_class[32]; // class to create
-char g_difficulty[32]; 
+int g_section;         // 1: root, 2: warband name, 3: class name
+char g_class[32];      // class to create
+char g_difficulty[32]; // difficulty of class to add
 char g_name[32];
-char g_warband[32]; // name of warband (attacking group)
-char g_team[32]; // red or blue
-char g_target_warband[32];
+char g_team[32];            // red or blue
+char g_target_warband[32];  // name of target warband to add
+char g_current_warband[32]; // name of current parsed warband (attacking group)
+char g_count[32];
 //int[] g_buffs;
 
 public SMCResult Warband_KeyValue(SMCParser smc, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
+    if(strcmp(g_target_warband, g_current_warband) == 0)
+    {
+        if(strcmp(key, "buffs") == 0)
+        {
+            // TODO: Implement
+        }
+        else if(strcmp(key, "difficulty") == 0)
+        {
+            strcopy(g_difficulty, strlen(value) + 1, value);
+        }
+        else if(strcmp(key, "name") == 0)
+        {
+            strcopy(g_class, strlen(value) + 1, value);
+        }
+        else if(strcmp(key, "count") == 0)
+        {
+            strcopy(g_count, strlen(value) + 1, value);
+        }
+    }
     return SMCParse_Continue;
 }
 public SMCResult Warband_EndSection(SMCParser smc)
 {
     g_section--;
+    PrintToServer("%d", g_section);
+    if(g_section == 1 && strcmp(g_current_warband, g_target_warband) == 0)
+    {
+        // command to add class...etc
+        PrintToServer("[SM-DEBUG] tf_bot_add %s %s %s %s %s", g_count, g_class, g_team, g_difficulty, g_name);
+    }
     return SMCParse_Continue;
 }
 public SMCResult Warband_NewSection(SMCParser smc, const char[] name, bool opt_quotes)
 {
     g_section++;
-    if(g_section == 2)
+    PrintToServer("%s %d", name, g_section);
+    if(g_section == 1)
     {
-        strcopy(g_class, strlen(name), name);
+        strcopy(g_current_warband, strlen(name) + 1, name);
+    }
+    if(g_section == 2 && strcmp(g_current_warband, g_target_warband) == 0)
+    {
+        strcopy(g_class, strlen(name) + 1, name);
         PrintToServer("Encountered %s", g_class);
     }
     return SMCParse_Continue;
@@ -67,12 +101,11 @@ public SMCResult Warband_NewSection(SMCParser smc, const char[] name, bool opt_q
 public Action Command_Unleash_Wave(int client, int args)
 {
     char arg1[32], arg2[32];
-
     GetCmdArg(1, g_target_warband, sizeof(arg1));
     GetCmdArg(2, g_team, sizeof(arg2));
 
-    // strcopy(g_target_warband, strlen(arg1), arg1);
-    // strcopy(g_team, strlen(arg2), arg2);
+    char sPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, sPath, sizeof(sPath), "%s/%s", CONFIG_FOLDER, CONFIG_FILE);
 
     SMCParser parser = new SMCParser();
     SMC_SetReaders(parser, Warband_NewSection, Warband_KeyValue, Warband_EndSection);
@@ -80,19 +113,19 @@ public Action Command_Unleash_Wave(int client, int args)
     char error[128];
     int line = 0, col = 0;
     g_section = 0;
-    // SMCError result = parser.ParseFile(file, line, col);
+    SMCError result = parser.ParseFile(sPath, line, col);
 
-    // if( result != SMCError_Okay )
-    // {
-    // 	if( parser.GetErrorString(result, error, sizeof(error)) )
-    // 	{
-    // 		SetFailState("%s on line %d, col %d of %s [%d]", error, line, col, file, result);
-    // 	}
-    // 	else
-    // 	{
-    // 		SetFailState("Unable to load config. Bad format? Check for missing { } etc.");
-    // 	}
-    // }
-    // delete parser;
+    if( result != SMCError_Okay )
+    {
+    	if( parser.GetErrorString(result, error, sizeof(error)) )
+    	{
+    		SetFailState("%s on line %d, col %d of %s [%d]", error, line, col, sPath, result);
+    	}
+    	else
+    	{
+    		SetFailState("Unable to load config. Bad format? Check for missing { } etc.");
+    	}
+    }
+    delete parser;
     return Plugin_Handled;
 }
