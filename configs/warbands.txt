@@ -1,0 +1,37 @@
+"WarBands"
+{
+    "warband1"
+    {
+        "pyro" 
+        {
+            "buffs" "50 19"
+            "difficulty" "easy"
+            "name" "wb1_pyro_1"
+            "count" "1"
+        }
+        "pyro" 
+        {
+            "buffs" "50 19"
+            "difficulty" "easy"
+            "name" "wb1_pyro_2"
+            "count" "1"
+        }
+        "heavyweapons"
+        {
+            "buffs" "50 27"
+            "difficulty" "easy"
+            "name" "wb1_heavy_1"
+            "count" "1"
+        }
+    }
+    "warband2"
+    {
+        "heavyweapons"
+        {
+            "buffs" "2 4 8"
+            "difficulty" "expert"
+            "name" "wb2_heavy_1"
+            "count" "1"
+        }
+    }
+}
